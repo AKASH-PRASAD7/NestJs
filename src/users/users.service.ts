@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
 let users = [
   {
@@ -87,13 +87,21 @@ let users = [
 export class UsersService {
   findAll(role?: 'user' | 'moderator' | 'admin') {
     if (role) {
-      return users.filter((user) => user.role === role);
+      const userRoles = users.filter((user) => user.role === role);
+      if (!userRoles.length) {
+        throw new NotFoundException('User with this role not found!');
+      }
+      return userRoles;
     }
     return users;
   }
 
-  findOne(id: string) {
-    return users.find((user) => user.id === +id);
+  findOne(id: number) {
+    const user = users.find((user) => user.id === id);
+    if (!user) {
+      throw new NotFoundException('User not found!');
+    }
+    return user;
   }
 
   create(userData: {
@@ -119,7 +127,7 @@ export class UsersService {
   }
 
   update(
-    id: string,
+    id: number,
     userData: {
       name?: string;
       email?: string;
@@ -128,7 +136,7 @@ export class UsersService {
       role?: string;
     },
   ) {
-    const user = users.find((user) => user.id === +id);
+    const user = users.find((user) => user.id === id);
     if (!user) {
       return {
         message: 'user does not exist!',
@@ -144,14 +152,15 @@ export class UsersService {
         return user;
       }
     });
+    const updatedUser = users.find((user) => user.id === id);
     return {
       message: 'user updated successfully!',
-      ...userData,
+      ...updatedUser,
     };
   }
 
-  delete(id: string) {
-    users = users.filter((user) => user.id !== +id);
+  delete(id: number) {
+    users = users.filter((user) => user.id !== id);
     return {
       message: 'Deleted',
     };
